@@ -4,6 +4,9 @@
 #define PI_OVER_FOUR 0.78539816339f
 #define GRAVITY_STRENGTH 9.83f
 
+#define ORIENTATION_CULL_VAL 0.9f
+#define FRUSTUM_CULL_VAL 0.05f
+
 #define WORKGROUP_SIZE 32
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
@@ -69,9 +72,7 @@ void main() {
     float theta = currBlade.v0.w;
     vec3 f = vec3(cos(theta + PI_OVER_FOUR), 0, sin(theta + PI_OVER_FOUR));
     float stiffness = currBlade.up.w;
-    
-    //REMOVE H LATER
-    float h = currBlade.v1.w;
+    float width = currBlade.v1.w;
 
     //gravity
     vec4 D = vec4(0.f, -1.f, 0.f, GRAVITY_STRENGTH);
@@ -80,7 +81,7 @@ void main() {
     vec3 g_force = gE + gF;
 
     //recovery
-    vec3 iv2 = v0 + h * up;
+    vec3 iv2 = v0 + width * up;
     vec3 r_force = (iv2 - v2) * stiffness;
 
     //wind
@@ -94,7 +95,7 @@ void main() {
     v2 += deltaForce;
     v2 = v2 - up * min(up * (v2 - v0), 0);
     float lProj = length(v2 - v0 - up * dot(v2 - v0, up));
-    v1 = v0 + h * up * max(1.f - lProj / h, 0.05 * max(lProj / h, 1.f));
+    v1 = v0 + width * up * max(1.f - lProj / width, 0.05 * max(lProj / width, 1.f));
 
     float L0 = length(v2 - v0);
     float L1 = length(v1 - v0) + length(v2 - v1);
@@ -102,7 +103,7 @@ void main() {
     float n = 3.f;
     float L = (2.f * L0 + (n - 1.f) * L1) / (n + 1.f);
 
-    float r = h / L;
+    float r = width / L;
     vec3 v1_corr = v0 + r * (v1 - v0);
     vec3 v2_corr = v1_corr + r * (v2 - v1);
 
@@ -110,11 +111,23 @@ void main() {
     currBlade.v2.xyz = v2_corr.xyz;
     inputBlades[gl_GlobalInvocationID.x] = currBlade;
 
-	// TODO: Cull blades that are too far away or not in the camera frustum and write them
-	// to the culled blades buffer
+	// TODO: Cull blades that are too far away or not in the camera frustum
+    vec3 camDir = vec3(camera.view[0][2], camera.view[1][2], camera.view[2][2]);
+    vec3 bladeDir = vec3(cos(theta), 0.f, sin(theta));
+    if (abs(dot(camDir, bladeDir)) > ORIENTATION_CULL_VAL) {
+        return;
+    }
+
+    vec3 m = 0.25 * v0 + 0.5 * v1 + 0.25 * v2;
+    vec4 mClip = camera.proj * camera.view * vec4(m, 1.f);
+    float limit = mClip.w + FRUSTUM_CULL_VAL;
+    if (mClip.x < -limit || mClip.x > limit || mClip.y < -limit || mClip.y > limit || mClip.z < -limit || mClip.z > limit) {
+        return;
+    }
+
+    //DONE: write blades to the culled blades buffer
 	// Note: to do this, you will need to use an atomic operation to read and update numBlades.vertexCount
 	// You want to write the visible blades to the buffer without write conflicts between threads
-
     const uint culledIdx = atomicAdd(numBlades.vertexCount, 1);
     outputBlades[culledIdx] = inputBlades[gl_GlobalInvocationID.x];
 }
