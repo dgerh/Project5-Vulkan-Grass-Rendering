@@ -6,6 +6,8 @@
 
 #define ORIENTATION_CULL_VAL 0.9f
 #define FRUSTUM_CULL_VAL 0.05f
+#define MAX_DISTANCE 40
+#define NUM_BUCKETS 10
 
 #define WORKGROUP_SIZE 32
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
@@ -13,6 +15,7 @@ layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 layout(set = 0, binding = 0) uniform CameraBufferObject {
     mat4 view;
     mat4 proj;
+    vec4 pos;
 } camera;
 
 layout(set = 1, binding = 0) uniform Time {
@@ -86,7 +89,7 @@ void main() {
 
     //wind
     //vec3 windDirection = vec3(0.5f, 0.f, 0.f);
-    vec3 windDirection = vec3(sin(totalTime * 0.84f), cos((totalTime + 23123.f * 314.f + 1234.f) * 0.23f), 0.f);
+    vec3 windDirection = vec3(sin(totalTime * 0.84f) * 2.f - 1.f, cos((totalTime + 23123.f * 314.f + 1234.f) * 0.23f) * 2.f - 1.f, 0.f);
     vec3 windAlignment = vec3(1.f);
     vec3 w_force = windDirection * windAlignment;
 
@@ -122,6 +125,12 @@ void main() {
     vec4 mClip = camera.proj * camera.view * vec4(m, 1.f);
     float limit = mClip.w + FRUSTUM_CULL_VAL;
     if (mClip.x < -limit || mClip.x > limit || mClip.y < -limit || mClip.y > limit || mClip.z < -limit || mClip.z > limit) {
+        return;
+    }
+
+    vec3 camPos = camera.pos.xyz;
+    float dproj = length(v0 - camPos - up * dot(v0 - camPos, up));
+    if (gl_GlobalInvocationID.x % NUM_BUCKETS > floor(NUM_BUCKETS * (1 - dproj / MAX_DISTANCE))) {
         return;
     }
 
