@@ -2,7 +2,9 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #define PI_OVER_FOUR 0.78539816339f
-#define GRAVITY_STRENGTH 9.83f
+#define GRAVITY_STRENGTH 1.f
+#define WIND_STRENGTH 20.f
+#define WIND_FREQUENCY 0.5f
 
 #define ORIENTATION_CULL_VAL 0.9f
 #define FRUSTUM_CULL_VAL 0.05f
@@ -57,6 +59,42 @@ bool inBounds(float value, float bounds) {
     return (value >= -bounds) && (value <= bounds);
 }
 
+vec3 random3( vec3 p ) {
+    return fract(sin(vec3(dot(p, vec3(127.1, 311.7, 231.42)),
+                          dot(p, vec3(269.5, 183.3, 256.77)),
+                          dot(p, vec3(420.6, 631.2, 921.45))
+                    )) * 43758.5453);
+}
+
+float surflet(vec3 p, vec3 gridPoint) {
+    // Compute the distance between p and the grid point along each axis, and warp it with a
+    // quintic function so we can smooth our cells
+    vec3 t2 = abs(p - gridPoint);
+    vec3 t = vec3(1.f) - 6.f * (t2 * t2 * t2 * t2 * t2) + 15.f * (t2 * t2 * t2 * t2) - 10.f * (t2 * t2 * t2);
+    // Get the random vector for the grid point (assume we wrote a function random2
+    // that returns a vec2 in the range [0, 1])
+    vec3 gradient = random3(gridPoint) * 2. - vec3(1., 1., 1.);
+    // Get the vector from the grid point to P
+    vec3 diff = p - gridPoint;
+    // Get the value of our height field by dotting grid->P with our gradient
+    float height = dot(diff, gradient);
+    // Scale our height field (i.e. reduce it) by our polynomial falloff function
+    return height * t.x * t.y * t.z;
+}
+
+float perlinNoise3D(vec3 p) {
+	float surfletSum = 0.f;
+	// Iterate over the four integer corners surrounding uv
+	for(int dx = 0; dx <= 1; ++dx) {
+		for(int dy = 0; dy <= 1; ++dy) {
+			for(int dz = 0; dz <= 1; ++dz) {
+				surfletSum += surflet(p, floor(p) + vec3(dx, dy, dz));
+			}
+		}
+	}
+	return surfletSum;
+}
+
 void main() {
 	// Reset the number of blades to 0
 	if (gl_GlobalInvocationID.x == 0) {
@@ -88,10 +126,14 @@ void main() {
     vec3 r_force = (iv2 - v2) * stiffness;
 
     //wind
-    //vec3 windDirection = vec3(0.5f, 0.f, 0.f);
-    vec3 windDirection = vec3(sin(totalTime * 0.84f) * 2.f - 1.f, cos((totalTime + 23123.f * 314.f + 1234.f) * 0.23f) * 2.f - 1.f, 0.f);
-    vec3 windAlignment = vec3(1.f);
-    vec3 w_force = windDirection * windAlignment;
+    float scaledTime = totalTime * WIND_FREQUENCY;
+    vec3 unifiedWindDir = vec3(1.f, 0.f, 1.f);
+    vec3 windDir = vec3(perlinNoise3D(vec3(v2.x * 0.235, v2.y * 0.73, v2.z * 1.2) + unifiedWindDir * scaledTime),
+                        0.f,
+                        perlinNoise3D((vec3(v2.x * 0.732, v2.y * 0.11, v2.z * 0.5) * 0.532f + vec3(214.f, 11.f, 90.f)) + unifiedWindDir * scaledTime));
+    windDir *= WIND_STRENGTH;
+    float windAlignment = 1.f - dot(windDir, (v2 - v0) / (v2 - v0).length());
+    vec3 w_force = windDir * windAlignment;
 
     //apply forces
     vec3 deltaForce = (r_force + g_force + w_force) * deltaTime;

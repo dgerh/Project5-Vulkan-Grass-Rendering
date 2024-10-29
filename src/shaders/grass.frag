@@ -15,9 +15,16 @@ layout(location = 2) in vec2 fs_up;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    // TODO: Compute fragment color
+    // DONE: Compute fragment color
 
-    float length = isnan(length(fs_v2)) ? 0.f : length(fs_v2);
-    length += 0.7;
-    outColor = vec4(0.2, mix(0.3, 0.7, length), 0.2, 1.f);
+    vec3 baseColor = vec3(0.2, 0.6, 0.2);
+    
+    float lightFactor = dot(normalize(fs_v2), vec3(0.0, 1.0, 0.0));
+    lightFactor = max(lightFactor, 0.0);
+    
+    float variation = 0.1 * sin(fs_v1.x * 10.f) * sin(fs_v1.z * 10.f);
+    
+    vec3 finalColor = baseColor * (0.8 + variation + lightFactor * 0.2);
+    
+    outColor = vec4(finalColor, 1.f);
 }
