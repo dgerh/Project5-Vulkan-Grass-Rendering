@@ -27,9 +27,9 @@ In order to boost performance, culling methods are often used to not render gras
 
 It is clear that adding more blades decreases performance, and the drop off seems steeper as the number of blades increases past 1 << 8.
 
-![](img/cullingchart.png)
+![](img/cullchart.png)
 
-![](img/forceschart.png)
+![](img/forcechart.png)
 
-![](img/tesschart.png)
+![](img/tessellationchart.png)
 
