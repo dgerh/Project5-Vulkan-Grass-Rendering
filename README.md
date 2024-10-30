@@ -15,7 +15,7 @@ The Vulkan Grass Renderer project is an implementation of [Responsive Real-Time 
 
 ### Performance Analysis
 
-![](img/numbladeschart.png)
+![](img/bladeschart.png)
 
 It is clear that adding more blades decreases performance, and the drop off seems steeper as the number of blades increases past 1 << 8.
 
