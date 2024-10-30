@@ -63,7 +63,7 @@ I like this chart a lot because of how incredibly misleading it is. Gravity does
 
 ![](img/grass_grav.gif)
 
-It turns out that other than gravity all the forces on their own do not affect performance past the margin of error, which is expected as compute is very fast on the GPU and there is no memory access or outstanding other reasons for the forces to affect performance.
+It turns out that other than gravity(just kidding) every force has a minimal impact on performance past the margin of error, which is expected as compute is very fast on the GPU. With forces there is no additional memory access or outstanding other reason for a change in performance.
 
 ![](img/tessellationchart.png)
 
