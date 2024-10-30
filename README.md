@@ -25,11 +25,17 @@ In order to boost performance, culling methods are often used to not render gras
 
 ![](img/bladeschart.png)
 
-It is clear that adding more blades decreases performance, and the drop off seems steeper as the number of blades increases past 1 << 8.
+It is clear that adding more blades decreases performance, and the drop off seems steeper as the number of blades increases past 2^8.
 
 ![](img/cullchart.png)
 
 ![](img/forcechart.png)
+
+I like this chart a lot because of how incredibly misleading it is. Gravity does not actually boost performance, but instead when acting alone causes the blades to collapse inside themselves and not render at all! See the following gif for the bug that caused me an evening of pain:
+
+![](img/grass_grav.gif)
+
+It turns out that other than gravity all the forces on their own do not affect performance past the margin of error, which is expected as compute is very fast on the GPU and there is no memory access or outstanding other reasons for the forces to affect performance.
 
 ![](img/tessellationchart.png)
 
