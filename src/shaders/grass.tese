@@ -17,18 +17,6 @@ layout(location = 0) out vec3 fs_pos;
 layout(location = 1) out vec3 fs_nor;
 layout(location = 2) out vec2 fs_uv;
 
-float interp_quad(float u, float v) {
-    return u;
-}
-
-float interp_tri(float u, float v) {
-    return u + 0.5 * v - u * v;
-}
-
-float interp_parabola(float u, float v) {
-    return u - u * v * v;
-}
-
 float interp_tri_tip(float u, float v, float tau) {
     return 0.5 + (u - 0.5) * ((1 - max(v - tau, 0)) / (1 - tau));
 }
@@ -56,7 +44,6 @@ void main() {
     vec3 t0 = normalize(b - a);
     vec3 nor = normalize(cross(t0, t1));
 
-    //float t = interp_parabola(u, v);
     float t = interp_tri_tip(u, v, 0.05);
     vec3 pos = (1.f - t) * c0 + t * c1;
 
