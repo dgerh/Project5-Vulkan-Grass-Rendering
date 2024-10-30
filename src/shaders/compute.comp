@@ -1,11 +1,24 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+//use defines
+#define USE_WIND true
+#define USE_GRAVITY true
+#define USE_RECOVERY true
+
+#define USE_ORIENTATION_CULLING true
+#define USE_FRUSTUM_CULLING true
+#define USE_DISTANCE_CULLING true
+
+//constants
 #define PI_OVER_FOUR 0.78539816339f
+
+//force constants
 #define GRAVITY_STRENGTH 1.f
 #define WIND_STRENGTH 20.f
 #define WIND_FREQUENCY 0.5f
 
+//culling constants
 #define ORIENTATION_CULL_VAL 0.9f
 #define FRUSTUM_CULL_VAL 0.05f
 #define MAX_DISTANCE 40
@@ -116,24 +129,33 @@ void main() {
     float width = currBlade.v1.w;
 
     //gravity
-    vec4 D = vec4(0.f, -1.f, 0.f, GRAVITY_STRENGTH);
-    vec3 gE = normalize(D.xyz) * D.w;
-    vec3 gF = 0.25 * length(gE) * f;
-    vec3 g_force = gE + gF;
-
+    vec3 g_force = vec3(0.f);
+    if (USE_GRAVITY) {
+        vec4 D = vec4(0.f, -1.f, 0.f, GRAVITY_STRENGTH);
+        vec3 gE = normalize(D.xyz) * D.w;
+        vec3 gF = 0.25 * length(gE) * f;
+        g_force = gE + gF;
+    }
+    
     //recovery
-    vec3 iv2 = v0 + width * up;
-    vec3 r_force = (iv2 - v2) * stiffness;
+    vec3 r_force = vec3(0.f);
+    if (USE_RECOVERY) {
+        vec3 iv2 = v0 + width * up;
+        r_force = (iv2 - v2) * stiffness;
+    }
 
     //wind
-    float scaledTime = totalTime * WIND_FREQUENCY;
-    vec3 unifiedWindDir = vec3(1.f, 0.f, 1.f);
-    vec3 windDir = vec3(perlinNoise3D(vec3(v2.x * 0.235, v2.y * 0.73, v2.z * 1.2) + unifiedWindDir * scaledTime),
-                        0.f,
-                        perlinNoise3D((vec3(v2.x * 0.732, v2.y * 0.11, v2.z * 0.5) * 0.532f + vec3(214.f, 11.f, 90.f)) + unifiedWindDir * scaledTime));
-    windDir *= WIND_STRENGTH;
-    float windAlignment = 1.f - dot(windDir, (v2 - v0) / (v2 - v0).length());
-    vec3 w_force = windDir * windAlignment;
+    vec3 w_force = vec3(0.f);
+    if (USE_WIND) {
+        float scaledTime = totalTime * WIND_FREQUENCY;
+        vec3 unifiedWindDir = vec3(1.f, 0.f, 1.f);
+        vec3 windDir = vec3(perlinNoise3D(vec3(v2.x * 0.235, v2.y * 0.73, v2.z * 1.2) + unifiedWindDir * scaledTime),
+                            0.f,
+                            perlinNoise3D((vec3(v2.x * 0.732, v2.y * 0.11, v2.z * 0.5) * 0.532f + vec3(214.f, 11.f, 90.f)) + unifiedWindDir * scaledTime));
+        windDir *= WIND_STRENGTH;
+        float windAlignment = 1.f - dot(windDir, (v2 - v0) / (v2 - v0).length());
+        w_force = windDir * windAlignment;
+    }
 
     //apply forces
     vec3 deltaForce = (r_force + g_force + w_force) * deltaTime;
@@ -156,24 +178,30 @@ void main() {
     currBlade.v2.xyz = v2_corr.xyz;
     inputBlades[gl_GlobalInvocationID.x] = currBlade;
 
-	// TODO: Cull blades that are too far away or not in the camera frustum
-    vec3 camDir = vec3(camera.view[0][2], camera.view[1][2], camera.view[2][2]);
-    vec3 bladeDir = vec3(cos(theta), 0.f, sin(theta));
-    if (abs(dot(camDir, bladeDir)) > ORIENTATION_CULL_VAL) {
-        return;
+	// DONE: Cull blades that are too far away or not in the camera frustum
+    if (USE_ORIENTATION_CULLING) {
+        vec3 camDir = vec3(camera.view[0][2], camera.view[1][2], camera.view[2][2]);
+        vec3 bladeDir = vec3(cos(theta), 0.f, sin(theta));
+        if (abs(dot(camDir, bladeDir)) > ORIENTATION_CULL_VAL) {
+            return;
+        }
+    }
+    
+    if (USE_FRUSTUM_CULLING) {
+        vec3 m = 0.25 * v0 + 0.5 * v1 + 0.25 * v2;
+        vec4 mClip = camera.proj * camera.view * vec4(m, 1.f);
+        float limit = mClip.w + FRUSTUM_CULL_VAL;
+        if (mClip.x < -limit || mClip.x > limit || mClip.y < -limit || mClip.y > limit || mClip.z < -limit || mClip.z > limit) {
+            return;
+        }
     }
 
-    vec3 m = 0.25 * v0 + 0.5 * v1 + 0.25 * v2;
-    vec4 mClip = camera.proj * camera.view * vec4(m, 1.f);
-    float limit = mClip.w + FRUSTUM_CULL_VAL;
-    if (mClip.x < -limit || mClip.x > limit || mClip.y < -limit || mClip.y > limit || mClip.z < -limit || mClip.z > limit) {
-        return;
-    }
-
-    vec3 camPos = camera.pos.xyz;
-    float dproj = length(v0 - camPos - up * dot(v0 - camPos, up));
-    if (gl_GlobalInvocationID.x % NUM_BUCKETS > floor(NUM_BUCKETS * (1 - dproj / MAX_DISTANCE))) {
-        return;
+    if (USE_DISTANCE_CULLING) {
+        vec3 camPos = camera.pos.xyz;
+        float dproj = length(v0 - camPos - up * dot(v0 - camPos, up));
+        if (gl_GlobalInvocationID.x % NUM_BUCKETS > floor(NUM_BUCKETS * (1 - dproj / MAX_DISTANCE))) {
+            return;
+        }
     }
 
     //DONE: write blades to the culled blades buffer

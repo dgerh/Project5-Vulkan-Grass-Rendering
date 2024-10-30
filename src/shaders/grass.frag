@@ -1,6 +1,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+#define LIGHT_DIR vec3(1.f, 2.f, 1.f)
+
 layout(set = 0, binding = 0) uniform CameraBufferObject {
     mat4 view;
     mat4 proj;
@@ -19,12 +21,11 @@ void main() {
 
     vec3 baseColor = vec3(0.2, 0.6, 0.2);
     
-    float lightFactor = dot(normalize(fs_v2), vec3(0.0, 1.0, 0.0));
-    lightFactor = max(lightFactor, 0.0);
-    
     float variation = 0.1 * sin(fs_v1.x * 10.f) * sin(fs_v1.z * 10.f);
     
-    vec3 finalColor = baseColor * (0.8 + variation + lightFactor * 0.2);
+    vec3 finalColor = baseColor * (0.8 + variation);
+    //change the max term for lighting shenanigans
+    finalColor *= max(0.7, abs(dot(LIGHT_DIR, fs_v2)));
     
     outColor = vec4(finalColor, 1.f);
 }
