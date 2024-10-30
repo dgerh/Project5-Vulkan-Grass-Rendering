@@ -15,7 +15,7 @@ The Vulkan Grass Renderer project is an implementation of [Responsive Real-Time 
 
 ### Performance Analysis
 
-![](img/bladeschart.png)
+![](img/numbladeschart.png)
 
 ![](img/cullingchart.png)
 
