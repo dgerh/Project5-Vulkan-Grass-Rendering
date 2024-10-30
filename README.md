@@ -25,9 +25,11 @@ In order to boost performance, culling methods are often used to not render gras
 
 ![](img/bladeschart.png)
 
-It is clear that adding more blades decreases performance, and the drop off seems steeper as the number of blades increases past 2^8.
+It is clear that adding more blades decreases performance, and the drop off seems steeper as the number of blades increases past 2^8, up until around 2^20, where the performance is so low that adding more blades cannot bring the performance down much more.
 
 ![](img/cullchart.png)
+
+Turning on and off the culling modes, as well as changing the location of the camera shows the impact of the three different culling types. With all methods on, there is a hefty increase over the performance with all methods off. Additionally, when the camera is farther from the blades, the performance jumps up massively. It can be seen that distance and alignment culling are the cause for this. As distance increases, more blades are culled since more blades are removed from buckets farther from the camera. Also, as the camera becomes farther from the blades, more fall into the alignment "sweet spot" with the camera because they appear smaller due to perspective divide. Frustum culling does not help with performance as the camera gets farther, because this actually concentrates the blades in the frame. It instead mitigates performance as grass takes up the entire screen, because blades outside of the screen will not be rendered.
 
 ![](img/forcechart.png)
 
@@ -38,4 +40,6 @@ I like this chart a lot because of how incredibly misleading it is. Gravity does
 It turns out that other than gravity all the forces on their own do not affect performance past the margin of error, which is expected as compute is very fast on the GPU and there is no memory access or outstanding other reasons for the forces to affect performance.
 
 ![](img/tessellationchart.png)
+
+The tessellation level chart has quite a pleasing curve, where increasing the tessellation level always decreases performance, but at a smaller and smaller rate. This is not surprising, as converting the bezier curves into more and more vertices means more data has to be passed and more computation is done as the vertex shaders are acting per vertex.
 
