@@ -2,9 +2,9 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 //use defines
-#define USE_WIND false
+#define USE_WIND true
 #define USE_GRAVITY true
-#define USE_RECOVERY false
+#define USE_RECOVERY true
 
 #define USE_ORIENTATION_CULLING true
 #define USE_FRUSTUM_CULLING true
