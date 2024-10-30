@@ -3,10 +3,14 @@ Vulkan Grass Rendering
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 5**
 
-* (TODO) YOUR NAME HERE
-* Tested on: (TODO) Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+* Daniel Gerhardt
+  * https://www.linkedin.com/in/daniel-gerhardt-bb012722b/
+* Tested on: Windows 23H2, AMD Ryzen 9 7940HS @ 4GHz 32GB, RTX 4070 8 GB (Personal Laptop)
 
-### (TODO: Your README)
+![](img/grass_demo.gif)
 
-*DO NOT* leave the README to the last minute! It is a crucial part of the
-project, and we will not be able to grade you without a good README.
+### Description
+
+### Performance Analysis
+
+### Resources
