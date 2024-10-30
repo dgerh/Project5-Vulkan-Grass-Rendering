@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.h>
+#include <string>
 #include "Instance.h"
 #include "Window.h"
 #include "Renderer.h"
@@ -143,7 +144,21 @@ int main() {
     glfwSetMouseButtonCallback(GetGLFWWindow(), mouseDownCallback);
     glfwSetCursorPosCallback(GetGLFWWindow(), mouseMoveCallback);
 
+    double fps = 0.0, prev = 0.0, curr = 0.0, frames = 0.0;
+    std::string title;
+
     while (!ShouldQuit()) {
+        frames += 1;
+        curr = glfwGetTime();
+        
+        if (curr - prev >= 1.0) {
+            fps = frames / (curr - prev);
+            title = applicationName + std::string(" -- FPS: ") + std::to_string(fps);
+            glfwSetWindowTitle(GetGLFWWindow(), title.c_str());
+            prev = curr;
+            frames = 0;
+        }
+
         glfwPollEvents();
         scene->UpdateTime();
         renderer->Frame();

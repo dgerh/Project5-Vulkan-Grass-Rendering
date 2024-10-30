@@ -56,8 +56,8 @@ void main() {
     vec3 t0 = normalize(b - a);
     vec3 nor = normalize(cross(t0, t1));
 
-    //TODO: change T
-    float t = interp_parabola(u, v);
+    //float t = interp_parabola(u, v);
+    float t = interp_tri_tip(u, v, 0.05);
     vec3 pos = (1.f - t) * c0 + t * c1;
 
     //outputs
